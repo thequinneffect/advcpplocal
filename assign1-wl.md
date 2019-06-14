@@ -13,4 +13,8 @@
     * can we narrow this down?
 
 ## ideas
-* prioritising specific search paths i.e. if we want dog -> cot then for permutations of the first word, even though bog is a legit word, we want to explore cog first because it has a 2/3 match with the result word. Priority queue?
+* **priority BFS?** : prioritising specific search paths i.e. if we want dog -> cot then for permutations of the first word, even though bog is a legit word, we want to explore cog first because it has a 2/3 match with the result word. Priority queue?
+  * we use a scoring function, the more same-position, same-letter matches the current word and the target word have, the better
+  * put these initially into pools of their score before throwing them onto the BFS queue?
+  * not every word has a vowel, but almost all of them do. maybe this can be leveraged? this is more later level optimisations though.
+* **for checking re-encounters** : make an unordered_set of pairs {word, bool}. Then just need to throw a word into the set and check whether the bool is set or not, if it is, we have seen it before, if not, we haven't so we can use it, but we must set it now because we are going to use it. use an unordered set because it has O(1) access.
