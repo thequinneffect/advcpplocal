@@ -13,4 +13,4 @@
     * can we narrow this down?
 
 ## ideas
-* can we multi-thread to have multiple things running? a thread working on each n'th letter perms?
+* prioritising specific search paths i.e. if we want dog -> cot then for permutations of the first word, even though bog is a legit word, we want to explore cog first because it has a 2/3 match with the result word. Priority queue?
