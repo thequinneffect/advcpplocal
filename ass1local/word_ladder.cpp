@@ -190,7 +190,7 @@ void BuildSolutionsWithRDFS(seen_map& words_seen, const std::string& curr_word,
 void PrintSolutions(const std::set<std::string>& solutions) {
 
   if (solutions.empty()) {
-    std::cout << "No ladder found.\n\n";
+    std::cout << "No ladder found.\n";
     return;
   }
 
@@ -198,7 +198,6 @@ void PrintSolutions(const std::set<std::string>& solutions) {
   for (const auto& string : solutions) {
     std::cout << string << "\n";
   }
-  std::cout << "\n";
 }
 
 /*
