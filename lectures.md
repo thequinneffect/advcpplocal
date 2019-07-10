@@ -36,7 +36,8 @@
 
 ## friend? (read and add https://www.quora.com/What-are-the-differences-between-a-member-operator-function-and-a-friend-operator-function)
 * how do you know whether to make a function a member function or just a friend function?
-  * if 
+  * use members when the operation is called in the context of a particular instance
+  * use friends when the operation is called without any particular instance (even if they don't require access to private details i.e. they can get all they need though public access) TODO: why make them friends if they don't have to be? isn't this bad encapsulation?
 
 # misc
 
