@@ -32,6 +32,11 @@
 * if you want to pass an argument to a r-value reference parameter (T&&) then that argument must either already be an r-value or you must explicitly cast it to an r-value with std::move().
 * std::move : this can be thought of as removing the names from an l-value piece of memory to make it into an r-value. 
 
+# week 4
+
+## friend? (read and add https://www.quora.com/What-are-the-differences-between-a-member-operator-function-and-a-friend-operator-function)
+* how do you know whether to make a function a member function or just a friend function?
+  * if 
 
 # misc
 
