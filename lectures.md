@@ -12,6 +12,8 @@
 * define variables as close to first use as possible (WOO! finally some sense! 1511 "all vars at top of file" style sucks ass)
 
 ## l-values and r-values
+* read more here and add to this: https://stackoverflow.com/questions/3413470/what-is-stdmove-and-when-should-it-be-used
+
 * r-value : in simple terms, an r-value is a piece of un-named memory.
 * reference : a reference is just a new name for an existing piece of memory.  
 
