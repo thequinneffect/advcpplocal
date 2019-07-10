@@ -27,7 +27,9 @@
 * the first two points reveal why we use r-value references (T&&) for accessing r-values. To explain, your r-value is just a piece of un-named memory, and so you pass it to an r-value reference e.g. T&& foo, to bind foo as a new name to that piece of memory. This makes it an l-value from the perspective of the scope who did the binding of foo to the piece of un-named memory (the r-value) i.e. a T&& parameter is an l-value inside that function
   * but why not use a l-value reference (T& bar) to add the new name bar to the piece of memory? hmm
 * If you are passing an 
+* if you want to pass an argument to a r-value reference parameter (T&&) then that argument must either already be an r-value or you must explicitly cast it to an r-value with std::move().
 * std::move : this can be thought of as removing the names from an l-value piece of memory to make it into an r-value. 
+
 
 # misc
 
