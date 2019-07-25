@@ -46,7 +46,7 @@
   * the term clean-up changes depending on context : delete for new, close for open etc.
   * just because you own something doesn't mean you will actually clean it up (sometimes it does, single ownership), it just means you are responsible for the cleanup IF it needs to be done (sometimes only a ref count needs to be updated, shared ownership)
 * **single/unique ownership** : the resource is owned by a single object. Once this owning object no longer exists then the resource is released.
-* **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts. This is useful if you have a very expensive to copy resource.
+* **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts and is important to prevent a double/multiple free on the same pointer (which causes undefined behaviour). This is useful if you have a very expensive to copy resource.
 * it is easy to picture the difference of unique/single ownership and shared ownership as just 1 pointer pointing to something (unqiue/single) vs many pointers pointing to something (shared). 
 
 ## Object lifetimes
@@ -66,7 +66,11 @@
 ## Smart Pointers (i.e. favouring named/stack objects over un-named heap objects)
 * the rationale is that you can choose between;
   * raw pointers that point to "new" memory on the heap which is not freed unless "delete" is explicitly called. The heap memory is not freed when the raw pointer is popped from the stack frame.
-  * smart pointers (classes, and therefore named/heap objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
+    * yes a raw pointer is technically a named/stack object too, but it isn't owning and so doesn't hold-up the clean-up contract that owning demands
+  * smart pointers (classes, and therefore named/stack objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
+* **common combinations**
+  1. unique ptr + raw ptrs (observers)
+  2. shared ptr + weak ptr/observer ptr
 
 
 # misc
