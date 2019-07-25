@@ -39,6 +39,22 @@
   * use members when the operation is called in the context of a particular instance
   * use friends when the operation is called without any particular instance (even if they don't require access to private details i.e. they can get all they need though public access) TODO: why make them friends if they don't have to be? isn't this bad encapsulation?
 
+# week 5 (wed: skip to 8:00, fri: skip to )
+
+## Object lifetimes
+* we attach the lifetime of an object to something else to create safe object lifetimes i.e. to ensure that an object will be destroyed once it is no longer needed
+* remember that everything is an object
+* remember that using the heap for an object is essentially saying "this object needs its own space AND its OWN LIFETIME"
+
+## Ownership
+* **ownership** : you can think of ownership as a responsibility for correct cleanup of a resource. You own it, you perform the correct clean up procedure for the current situation.
+  * the term clean-up changes depending on context : delete for new, close for open etc.
+  * just because you own something doesn't mean you will actually clean it up (sometimes it does, single ownership), it just means you are responsible for the cleanup IF it needs to be done (sometimes only a ref count needs to be updated, shared ownership)
+* **single/unique ownership** : the resource is owned by a single object. Once this owning object no longer exists then the resource is released.
+* **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts. This is useful if you have a very expensive to copy resource.
+* it is easy to picture the difference of unique/single ownership and shared ownership as just 1 pointer pointing to something (unqiue/single) vs many pointers pointing to something (shared). 
+
+
 # misc
 
 ## terminology
