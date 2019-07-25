@@ -48,6 +48,13 @@
 * **single/unique ownership** : the resource is owned by a single object. Once this owning object no longer exists then the resource is released.
 * **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts and is important to prevent a double/multiple free on the same pointer (which causes undefined behaviour). This is useful if you have a very expensive to copy resource.
 * it is easy to picture the difference of unique/single ownership and shared ownership as just 1 pointer pointing to something (unqiue/single) vs many pointers pointing to something (shared). 
+* **Pointer Ownership**
+* determining whether a pointer (of any kind) has ownership, and wether that ownership is shared, is easy as long as you understand what ownership is (see above) 
+  1. unique ptr : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared
+  2. shared ptr : has ownership because it is responsible for possibly having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so
+  3. weak ptr : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free and thus is non-owning (shared ownership therefore cannot exist)
+  4. raw c ptr : no ownership (reason stated many times), and hence non-sharing also
+  
 
 ## Object lifetimes
 * we attach the lifetime of an object to something else to create safe object lifetimes i.e. to ensure that an object will be destroyed once it is no longer needed
