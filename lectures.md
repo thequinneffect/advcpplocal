@@ -41,11 +41,6 @@
 
 # week 5 (wed: skip to 8:00, fri: skip to )
 
-## Object lifetimes
-* we attach the lifetime of an object to something else to create safe object lifetimes i.e. to ensure that an object will be destroyed once it is no longer needed
-* remember that everything is an object
-* remember that using the heap for an object is essentially saying "this object needs its own space AND its OWN LIFETIME"
-
 ## Ownership
 * **ownership** : you can think of ownership as a responsibility for correct cleanup of a resource. You own it, you perform the correct clean up procedure for the current situation.
   * the term clean-up changes depending on context : delete for new, close for open etc.
@@ -53,6 +48,25 @@
 * **single/unique ownership** : the resource is owned by a single object. Once this owning object no longer exists then the resource is released.
 * **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts. This is useful if you have a very expensive to copy resource.
 * it is easy to picture the difference of unique/single ownership and shared ownership as just 1 pointer pointing to something (unqiue/single) vs many pointers pointing to something (shared). 
+
+## Object lifetimes
+* we attach the lifetime of an object to something else to create safe object lifetimes i.e. to ensure that an object will be destroyed once it is no longer needed
+* remember that everything is an object
+* **named objects (stack objects);**
+  * variables are tied to their scope
+  * a data member (of a class) is tied to the lifetime of that class instance (unless static)
+  * an element in a std::vector is tied to the lifetime of the vector
+* **un-named objects (heap objects);**
+  * heap objects should be tied to their owner
+    * an owning raw pointer (raw pointer that points to the heap data) is tied to its scope/owning class instance, but the difference is that when it is destroyed (goes out of scope, owning class instance is destructed), the data that it points to is not cleaned up. 
+    * a c-style array is exactly the same as the above (array variable is just a pointer) except that you don't clean up not only 1 element, but n.
+* remember that using the heap for an object is essentially saying "this object needs its own space AND its OWN LIFETIME"
+* in c++ we tend to want to favour named/stack objects because that memory is managed for us (the combination of the stack frame protocol popping things, and c++ calling objects destructors when they are popped from the stack handles this)
+
+## Smart Pointers (i.e. favouring named/stack objects over un-named heap objects)
+* the rationale is that you can choose between;
+  * raw pointers that point to "new" memory on the heap which is not freed unless "delete" is explicitly called. The heap memory is not freed when the raw pointer is popped from the stack frame.
+  * smart pointers (classes, and therefore named/heap objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
 
 
 # misc
