@@ -49,11 +49,11 @@
 * **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts and is important to prevent a double/multiple free on the same pointer (which causes undefined behaviour). This is useful if you have a very expensive to copy resource.
 * it is easy to picture the difference of unique/single ownership and shared ownership as just 1 pointer pointing to something (unqiue/single) vs many pointers pointing to something (shared). 
 * **Pointer Ownership**
-* determining whether a pointer (of any kind) has ownership, and wether that ownership is shared, is easy as long as you understand what ownership is (see above) 
+* determining whether a pointer (of any kind) has ownership, and whether that ownership is shared, is easy as long as you understand what ownership is (to have ownership over a resource means to have the responsibility to clean it up when required) 
   1. unique ptr : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared
   2. shared ptr : has ownership because it is responsible for possibly having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so
   3. weak ptr : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free and thus is non-owning (shared ownership therefore cannot exist)
-  4. raw c ptr : no ownership (reason stated many times), and hence non-sharing also
+  4. raw c ptr/observer ptr : no ownership (reason stated many times), and hence non-sharing also
   
 
 ## Object lifetimes
@@ -77,7 +77,11 @@
   * smart pointers (classes, and therefore named/stack objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
 * **common combinations**
   1. unique ptr + raw ptrs (observers)
-  2. shared ptr + weak ptr/observer ptr
+  2. shared ptr + weak ptr/raw ptrs (observers)
+**avoid using new and delete** 
+* "unique_ptr<LongTypeName> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique<LongTypeName>(args)" mentions it once - this is one very small benefit for using make_* instead of new
+**when you should use new**
+* 
 
 
 # misc
