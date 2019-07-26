@@ -77,11 +77,11 @@
   * smart pointers (classes, and therefore named/stack objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
 * **common combinations**
   1. unique ptr + raw ptrs (observers)
-  2. shared ptr + weak ptr/raw ptrs (observers)
+  2. shared ptr + weak ptr/raw ptrs (observers)  
 **avoid using new and delete** 
-* "unique_ptr<LongTypeName> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique<LongTypeName>(args)" mentions it once - this is one very small benefit for using make_* instead of new
-**when you should use new**
-* 
+* "unique_ptr<LongTypeName> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique<LongTypeName>(args)" mentions it once - this is one very small benefit for using make_* instead of new  
+* compilers evaluate function arguments in different orders, some left to right, others right to left. Therefore if you call a function foo(new int, new double) then if one of these succeeds but the second one fails, the first one will be leaked (not free'd). You can fix this with smart pointers, foo(std::make_unique<int>(), std::make_unique<double>())
+**TODO: when you should/have to use new**
 
 
 # misc
