@@ -75,14 +75,19 @@
   * raw pointers that point to "new" memory on the heap which is not freed unless "delete" is explicitly called. The heap memory is not freed when the raw pointer is popped from the stack frame.
     * yes a raw pointer is technically a named/stack object too, but it isn't owning and so doesn't hold-up the clean-up contract that owning demands
   * smart pointers (classes, and therefore named/stack objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
-* **common combinations**
+* **common combinations**  
   1. unique ptr + raw ptrs (observers)
   2. shared ptr + weak ptr/raw ptrs (observers)  
+* use shared pointers when you need multiple pointers to a resource AND MORE IMPORTANTLY you don't know which one will live the longest (if you know which one will live the longest, you just make it a unique ptr and the rest observers/raw ptrs)
 **avoid using new and delete** 
-* "unique_ptr<LongTypeName> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique<LongTypeName>(args)" mentions it once - this is one very small benefit for using make_* instead of new  
+* "unique_ptr<LongTypeName> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique<LongTypeName>(args)" mentions it once - this is one very small benefit for using make_* instead of new
 * compilers evaluate function arguments in different orders, some left to right, others right to left. Therefore if you call a function foo(new int, new double) then if one of these succeeds but the second one fails, the first one will be leaked (not free'd). You can fix this with smart pointers, foo(std::make_unique<int>(), std::make_unique<double>())
+* int* i = new int; std::unique_ptr<int> up1{i}, std::unique_ptr<int> up2{i}, ... , std::unique_ptr<int> upN{i}. As you can see, if you use new and have a raw pointer to it then you can have it owned by many unique pointers which doesn't make sense and will cause a crash on the second attempt to free (smart pointers aren't smart enought to get around this). By using auto up = std::make_unique<T>(val), you encapsulate the allocation within the make_unique function and so the only way to copy it would be to copy construct or copy assign it (and smart pointers ARE smart enough to defend against this!)
+* technically std::unique_ptr<T> up{new T} encapsulates the allocation as well (meaning the resource could not be re-used in any other way except for copy construction/copy assignment as well) but the problem is that this is bad for exception safety/stack unwinding (TODO: add once i know this)
 **TODO: when you should/have to use new**
-
+**release vs reset (AKA: WHY THE FUCK DIDN'T THEY CHOOSE BETTER NAMES FOR THESE**
+* release : releases ownership and returns pointer to resource (reLease, L for leakable)
+* reset : deletes the currently owned resource
 
 # misc
 
