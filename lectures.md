@@ -99,6 +99,16 @@
   * const : because there is no reason to change an exception object that is caught
   * reference : avoids copy so it is faster AND prevents slicing (say you throw a sub-class but you catch statement has a parent-class, then because you don't have a reference you are passing by value and hence it will do a copy. Because the type you specified to create was the parent class, it is going to use its copy constructor and this will obviously throw away any extra parts the sub-class had i.e. slices them off)
 
+# week 6 - templates
+
+## Generic Programming
+* generic programming is programming where you write software components that are independant of types
+  * it is the implementation of the logic i.e. the logic for a min algorithm doesn't change just because the data type being compared changes (the only thing that changes when the data type changes is how the comparison of the two variables of said data type are compared e.g. for an int you just see which one is lesser, for a string it is alphabetic, for a student class it could be comparing by zid etc.)
+  * because the logic is the same regardless of data type, as long as the data type being passed in has correctly implemented the operations that the generic algorithm needs, then it will work (like above for min the data type must have operator< defined)
+~~~
+template <typename A, typename B>
+~~~
+
 # misc
 
 ## terminology
