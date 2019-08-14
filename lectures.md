@@ -116,11 +116,28 @@
 * without templates, we cannot program generically - that is, we cannot create a function which accepts and applies the same logic to two very different data types. Instead, we must create two versions of the same function i.e. function overloading (see slide 3.1 of lecture 6.2)
 
 ## Templates
-* first of all, templates are NOT CODE, they are instructions to generate code
-* second, code is generated from templates at compile time (by the compiler) when the compiler see's a call to that templated function. It only generates an implementation for the type it has just seen it to be parameterized with.
+**Function Templates**  
+* first of all, function templates are NOT CODE, they are instructions to generate code
+* secondly, the generation of a function (from a function template) for a particular type only happens when a call to the templated function is seen during compile time i.e. if you never parameterize a templated function then no actual functions will be generated (the compiler only generates what you parameterize)
+* you can think of templates as making the compiler generate function overloads for you
+  * this means that compiling takes longer (because the compiler has to compile each templated function n times - where n is the number of unique ways you parameterized that specific function template). This also mean that run-time is faster because we have the instructions specific to each type ready to go (no overhead at runtime, just call the matching function). 
+  * this is an example of how C++ shifts more work to compile time to have a faster run time (same motivation as constexpr)
+* you make a templated function by using the keyword template. Then you put however many **template type parameters** you need inside the **template paramter list**
 ~~~
-template <typename A, typename B>
+template <typename T> // this is the template parameter list. T itself is a template type parameter
+T min(T a, T b) {
+ return a < b ? a : b;
+}
 ~~~
+* confusingly (and somewhat backwards), template type parameters (i.e. placeholders for types that themselves don't have a concrete type) are called **type parameters**. **Non-type parameters** are any actual concrete types (but they have no default value)
+  * it's easier to think of these as "typename parameters" and "non-typename parameters" becuase you use the keyword typename when there is no concrete type and the concrete type otherwise.
+  * another way to remember it is that you parameterize type parameters with types (like char, int, std::string etc.), whilst you parameterize non-type parameters with values (1, 3.0, 'a', "hello" etc.)
+~~~
+template<typename T, int size, double scaler>
+foo(T lhs, T rhs) { ... } 
+~~~
+* T is a type parameter, size and scaler are both non-type parameters. Remember you can figure this out because T uses typename and so must be a type parameter but size and scaler use int and double and so are non-type paramters (they don't use typename). The easiest way to figure it out is to imagine parameterizing it : foo<char, 5, 100>('a', 'b'), as you can see, the T's are parameterized with a type (char). making them type parameters, yet scaler and size are parameterized with values (making them non-type parameters)
+**Class Templates**  
 
 # misc
 
