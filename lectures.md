@@ -99,7 +99,7 @@
   * const : because there is no reason to change an exception object that is caught
   * reference : avoids copy so it is faster AND prevents slicing (say you throw a sub-class but you catch statement has a parent-class, then because you don't have a reference you are passing by value and hence it will do a copy. Because the type you specified to create was the parent class, it is going to use its copy constructor and this will obviously throw away any extra parts the sub-class had i.e. slices them off)
 
-# week 6 - templates (wed: skip to 3:09, fri: skip to
+# week 6 - templates (wed: skip to 3:50, fri: skip to
 
 ## Polymorphism in C++
 * Polymorphism is when you have the same single interface (API) being implemented with multiple different implementations (say version A vs version B etc.). Then, depending on whether you have an A or B, you will use the A or B version/implementation of the API.
@@ -108,9 +108,16 @@
 * **dynamic polymorphism** : as the name suggests, this is run-time polymorphism (BUT it can also be compile-time depending on the variable type). This is all quite complicated and is explored later (week 8).
 
 ## Generic Programming
-* generic programming is programming where you write software components that are independant of types
+* generic programming is programming where you write software components (methods, classes etc.) that are independant of types
   * it is the implementation of the logic i.e. the logic for a min algorithm doesn't change just because the data type being compared changes (the only thing that changes when the data type changes is how the comparison of the two variables of said data type are compared e.g. for an int you just see which one is lesser, for a string it is alphabetic, for a student class it could be comparing by zid etc.)
   * because the logic is the same regardless of data type, as long as the data type being passed in has correctly implemented the operations that the generic algorithm needs, then it will work (like above for min the data type must have operator< defined)
+
+## Why Templates?
+* without templates, we cannot program generically - that is, we cannot create a function which accepts and applies the same logic to two very different data types. Instead, we must create two versions of the same function i.e. function overloading (see slide 3.1 of lecture 6.2)
+
+## Templates
+* first of all, templates are NOT CODE, they are instructions to generate code
+* second, code is generated from templates at compile time (by the compiler) when the compiler see's a call to that templated function. It only generates an implementation for the type it has just seen it to be parameterized with.
 ~~~
 template <typename A, typename B>
 ~~~
