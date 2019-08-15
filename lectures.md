@@ -137,6 +137,7 @@ template<typename T, int size, double scaler>
 foo(T lhs, T rhs) { ... } 
 ~~~
 * T is a type parameter, size and scaler are both non-type parameters. Remember you can figure this out because T uses typename and so must be a type parameter but size and scaler use int and double and so are non-type paramters (they don't use typename). The easiest way to figure it out is to imagine parameterizing it : foo<char, 5, 100>('a', 'b'), as you can see, the T's are parameterized with a type (char). making them type parameters, yet scaler and size are parameterized with values (making them non-type parameters)
+* non-type parameters are often used for passing things like container size e.g. "int array_size or int queue_size". The advantage of this is improved performance - the size of the container is determined at compile time requiring less to be done/processed at runtime. The disadvantages are 1. code explosion - instantiation created for a queue of every size and 2. you are unable to copy construct easily (for templated classes)
 **Class Templates**  
 
 # misc
