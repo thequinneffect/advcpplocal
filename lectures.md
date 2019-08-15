@@ -99,7 +99,7 @@
   * const : because there is no reason to change an exception object that is caught
   * reference : avoids copy so it is faster AND prevents slicing (say you throw a sub-class but you catch statement has a parent-class, then because you don't have a reference you are passing by value and hence it will do a copy. Because the type you specified to create was the parent class, it is going to use its copy constructor and this will obviously throw away any extra parts the sub-class had i.e. slices them off)
 
-# week 6 - templates (wed: skip to 3:50, fri: skip to
+# week 6 - templates (fri: skip to 3:50, skip 51:30 - 1:00:53 | wed: skip to
 
 ## Polymorphism in C++
 * Polymorphism is when you have the same single interface (API) being implemented with multiple different implementations (say version A vs version B etc.). Then, depending on whether you have an A or B, you will use the A or B version/implementation of the API.
