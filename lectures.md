@@ -163,4 +163,8 @@ void MyStack<T>::Push(T& element) { stack_.push_back(element); }
 
 # misc
 
+## defaulting functions and the rule of five (or 6?)/special member functions
+* C++ has 6 special member functions: ctor, dtor, copy ctor, move ctor, copy assign, move assign
+* if you do not explicitly 
+
 ## terminology
