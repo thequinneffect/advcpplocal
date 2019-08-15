@@ -137,8 +137,28 @@ template<typename T, int size, double scaler>
 foo(T lhs, T rhs) { ... } 
 ~~~
 * T is a type parameter, size and scaler are both non-type parameters. Remember you can figure this out because T uses typename and so must be a type parameter but size and scaler use int and double and so are non-type paramters (they don't use typename). The easiest way to figure it out is to imagine parameterizing it : foo<char, 5, 100>('a', 'b'), as you can see, the T's are parameterized with a type (char). making them type parameters, yet scaler and size are parameterized with values (making them non-type parameters)
-* non-type parameters are often used for passing things like container size e.g. "int array_size or int queue_size". The advantage of this is improved performance - the size of the container is determined at compile time requiring less to be done/processed at runtime. The disadvantages are 1. code explosion - instantiation created for a queue of every size and 2. you are unable to copy construct easily (for templated classes)
+* non-type parameters are often used for passing things like container size e.g. "int array_size or int queue_size". The advantage of this is improved performance - the size of the container is determined at compile time requiring less to be done/processed at runtime. The disadvantages are 1. code explosion - instantiation created for a queue of every size and 2. you are unable to copy construct easily (for templated classes)  
+
 **Class Templates**  
+
+## Template Declarations and Definitions
+* when you declare a template component (function or class), you must write the template parameter list (i.e. template <...>) above the class name or function name (except for when a function declaration is made inside a templated class, then it doesn't require it)
+  * you can think of it like scopes. If you write the template paramter list above the class, then everything inside the class knows what the template parameters are
+  * but that doesn't mean a method defined outside the class knows about them, so you must add the template paramter list above the method
+~~~
+template <typename T>
+class MyStack
+{
+ void Push(T&);
+ std::vector stack_;
+}
+~~~
+* also, when you define a templated class's member function otuside the class, not only do you have to add the template parameter list as described above, but you must parameterize the class name with the appropriate template parameter
+~~~
+// this is below ^ in the file
+template <typename T>
+void MyStack<T>::Push(T& element) { stack_.push_back(element); }
+~~~
 
 # misc
 
