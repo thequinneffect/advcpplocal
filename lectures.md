@@ -145,6 +145,7 @@ foo(T lhs, T rhs) { ... }
 * when you declare a template component (function or class), you must write the template parameter list (i.e. template <...>) above the class name or function name (except for when a function declaration is made inside a templated class, then it doesn't require it)
   * you can think of it like scopes. If you write the template paramter list above the class, then everything inside the class knows what the template parameters are
   * but that doesn't mean a method defined outside the class knows about them, so you must add the template paramter list above the method
+  * tldr: the compiler won't know what T means if you don't have the template paramter list including T in it for each scope it is used in
 ~~~
 template <typename T>
 class MyStack
