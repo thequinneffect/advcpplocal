@@ -98,8 +98,18 @@
 * catch by const reference i.e. catch(const ExceptionType& e)
   * const : because there is no reason to change an exception object that is caught
   * reference : avoids copy so it is faster AND prevents slicing (say you throw a sub-class but you catch statement has a parent-class, then because you don't have a reference you are passing by value and hence it will do a copy. Because the type you specified to create was the parent class, it is going to use its copy constructor and this will obviously throw away any extra parts the sub-class had i.e. slices them off)
+  
+## Exception Safety Levels
+1. no throw (failure transparency - callers are unaware of whether the function throws or not) : this is achieved using the "noexcept" specifier. This means the method can throw exceptions but it must handle all of them inside itself i.e. no-throw means that if the method throws an exception and doesn't handle it itself then it will crash the program.
+2. strong exception safety (commit or roll-back, i.e. either all changes are done successfully and the resultant state is commited, or we roll-back to the original state) : if the function throws then everything will be as it was before the call was made
+  * copy ctors and copy assignment
+  * achieved by first performing any operations that may throw but don't do anything irreversible, then performing irreversible operations that don't throw
+3. basic exception safety : When the function fails (throws exception), there can be side-effects but all invariants will still be true and we have a no-leak guarantee. We are left in a "valid but unspecified state" with the guarantee that no resources have been leaked. i.e. any stored data will contain valid values, even though these may be different from what was stored before
+  * move ctors that are not noexcept behave in this way
+4. no safety
+* generally no-throw and strong exception safety are better but it's not a strict hierarchy i.e. no-throw isn't always better than strong etc etc. e.g. it doesn't really make sense for an at() method to be no-throw/noexcept (because if a user accesses out of bounds they should be notified, not silently handled within the at function)
 
-# week 6 - templates (fri: skip to 3:50, skip 51:30 - 1:00:53 | wed: skip to
+# week 6 - templates (fri: skip to 3:50, skip 51:30 - 1:31:00 | wed: skip to
 
 ## Polymorphism in C++
 * Polymorphism is when you have the same single interface (API) being implemented with multiple different implementations (say version A vs version B etc.). Then, depending on whether you have an A or B, you will use the A or B version/implementation of the API.
