@@ -57,14 +57,58 @@
 * if you capture by value, then the copy in the lambda function will not update when the one in the local scope does. Be especially careful that you are passing a reference to a container into a lambda if you want that lamba to be able to actually update the container.
 * if you capture by reference, then the lambda function variable will receive updates when the original updates. Be careful that you the original hasn't gone out of scope! undefined behaviour!
 
-# week 3
+# week 3 - OOP
 
 ## scope
 * the scope of a variable is the part of the program where it is accessible
-* scope starts at variable definition (you obviously can't use something that is undefined because, well, it doesn't exist before it is defined)
+* scope starts at variable definition (you obviously can't use something before it is defined)
   * remember that declaration does not allocate any memory, definition does, hence definition is the actual point at which the declared thing exists
 * scope usually ends at the next closing brace "}" (but it won't in some cases e.g. global variable, static variable)
 * define variables as close to first use as possible (WOO! finally some sense! 1511 "all vars at top of file" style sucks ass)
+* in c++ all variables are objects (even primitive types)
+* object lifetime starts when the object comes into scope and it is constructed
+* each object has 1 or more constructors (ctors) that say how to construct it
+* object lifetime ends when it goes out of scope and is destructed (only 1 dtor)
+* generally use () to call functions and {} to construct objects
+* RAII: resource acquisition is initilisation i.e. you encapsulate resources inside objects (acquite them in the ctor) that way you can be sure to free or close them in the dtor of the owning object.
+
+## Exception basics
+* an exception is a recoverable but critical exception. Use try {} catch(std::exception e) {} and throw(someexception)
+* add noexcept to your function to tell the compiler to not generate recovery code for this function. If it does throw an exception, your program will crash. Use this to indicate to callers that they need not put your function in a try catch block because it wont throw exceptions.
+
+## OOP basics
+* interface: what is provided to the user (API)
+* implementation: the attributes and methods that are used to implement the interface
+* abstraction: separation of interface and implementation
+* encapsulation: hiding of implementation (to allow for abstraction). Basically, the user doesn't need to know anything about the implementation (it can be hidden from them), such that different implementations can be used for the same interface.
+* header files are the interface (but in c++ they can now have some implementation for classes which is a little weird - e.g. inline implementation of member functions). This is why public and private keywords etc. exist. They are a hack to show which things in the header file are implementation and which ones are interface. Public stuff is interface, so put it up the top of the header file/class. This is what users will read (and it is all they should need to read to be able to use your class).
+* encapsulation means that an objecst state can only be accessed or modified through the public interface (API). This protects the state from user error and also makes the class easier to use (user need not concern themselves with implementation details, which can become quite complex, they just call functions with easy to understand names and documentation). This also allows for different implementations to be subbed in underneath the same interface, or for you to make changes to a an implementation without the user knowing).
+
+## Classes
+* there is no difference between class and struct in c++ other than classes are private by default and structs are public by default. In reality, use a struct when you want a multi-field data type that has little or no methods. Use a class otherwise. Note that you may well want to use a std::pair or std::tuple instead of a struct if you are only storing data.
+* member functions may be defined const (trailing const) which indicates they don't modify the data members of the class. Note that it can still modify non-const paramters. It can also modify member variables that are defined with the mutable keyword e.g. mutable int y.
+* mutable should be used very carefully. It indicates that this piece of data is not really a part of the classes state. For example, it could be a cache.
+* friend functions and friend classes: non-members that may access private parts of the class. In general this is a bad idea but sometimes it is needed e.g. non-member operator overloads, related/manager classes e.g. iterators (although nested classes are usually better for iterators)
+* anything declared inside a class needs to be accessed via classname::
+* all classes have an implicit member called this. It is a pointer to the instance of the class. it has top level const (it cannot point to anything else)
+* a ctor is generated if you do not supply one. Note that it can only be generated if one or more of the class members are missing both a in-class initialiser statement or a default ctor themselves.
+* the initialisation phase runs before the ctor runs. in this phase the initialiser list is ran. Note that the initaliser list order doesn't matter, it's the order that the members are decalred in the class that matters.
+~~~~
+class C {
+    // _b is initialised last even though it is first in the init list, because it is declared last in the class
+    C(int x, int y, int z, bool b): _b{b}, _x{x}, _y{y}, _z{z} {
+        cout << _z << endl; // prints whatever was passed as z because _z is set to it by now (init list has ran)
+        _x = 100; // regardless of what was passed in, _x will be 100 because this runs after the init list does
+    }
+    
+    int _x, _y, _z;
+    bool _b;
+}
+~~~~
+* static class members are associated with the class itself, and not any specific instance of it. They have global lifetime (program start to finish)
+
+* incomplete types can only be used to define pointer and reference types. This is because the type is incomplete and thus its size is not known, but a pointer/reference is always the same size so can still use those.
+* The above rule implicity means that classes cannot have members of their own type e.g. struct Node { int data; struct Node next;} is illegal, but struct Node* next would be fine.
 
 ## l-values and r-values
 * read more here and add to this: https://stackoverflow.com/questions/3413470/what-is-stdmove-and-when-should-it-be-used
