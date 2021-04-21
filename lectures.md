@@ -106,16 +106,23 @@ class C {
 }
 ~~~~
 * static class members are associated with the class itself, and not any specific instance of it. They have global lifetime (program start to finish)
+* classes should either provide definitions for copy construction and copy assignment, or they should use default or deleted implementations
+~~~~
+class T {
+    T(const T&) = default; // copy ctor with default (compiler generated) implementation
+    
+}
+~~~~
+* 
 
 * incomplete types can only be used to define pointer and reference types. This is because the type is incomplete and thus its size is not known, but a pointer/reference is always the same size so can still use those.
 * The above rule implicity means that classes cannot have members of their own type e.g. struct Node { int data; struct Node next;} is illegal, but struct Node* next would be fine.
 
 ## l-values and r-values
 * read more here and add to this: https://stackoverflow.com/questions/3413470/what-is-stdmove-and-when-should-it-be-used
-
 * r-value : in simple terms, an r-value is a piece of un-named memory.
+* l-value : a named piece of memory e.g. when you do vector<int> arr {1,2,3}; arr is really just a label that identifies a memory address. 
 * reference : a reference is just a new name for an existing piece of memory.  
-
 * l-value reference : a reference (new name) to an l-value (piece of already named memory). Denoted by T&
 * r-value reference : a reference (new name) to an r-value (piece of un-named memory). Denoted by T&&  
 
