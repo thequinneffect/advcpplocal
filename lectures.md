@@ -1,6 +1,61 @@
-# week 1
+# week 1 (intro and types)
+* <iostream> for cin, cout etc.
+* <cstdio> or <stdio.h> for printf, scanf etc.
+* compile with g++ using c++17 by: g++ -std=c++17
+* streaming something to stdout (usually the terminal) actually stores it in a buffer which is at some point sent to terminal (flushed). std::endl prints a newline then flushes the buffer, it is equivalent to std::cout << "\n" << std::flush. Use \n for more control over when the buffer is flushed.
+* default types are pretty standard (the least known one is probably enum - a single option from a finite constant set)
+* implicit type conversions do happen in c++ e.g. bool b1 = 10 converts to true.
+* declaration: I declare a name with a type!
+* definition: I declare a name with a type and implementation!
+* const: make everything const unless you know you need to modify it. If you are unsure, make it const and then remove it later if need be. const for containers make both the container and the container elements const.
+* references: these are aliases (another name) for an object. They cannot reference null, nor can they be changed once set. You also do not dereference manually like you do with a pointer, it happens automatically. 
+* const references mean you cannot update the pointed to object via the reference, even if the pointed to object is non-const.
+* templated classes/functions are not real classes or functions. Real classes and functions are generated from them. vector<int> and vector<string> are two different types (unlike Java generics).
+* auto: this keyword lets the compiler determine the type for you. It does strip off top level const and reference though.
+* functions can have default arguments. Note that they are only able to be used for trailing parameters.
+* pass by value copies the object into the argument, pass by reference doesn't copy the object but instead creates a reference (new alias) to directly reference the new thing. Technically, passing pointers is pass by value, it's just you're only copying a pointer. Use pass by reference when the argument is expensive to copy (large) or has no copy ctor (cannot even be copied)
+* lvalue: a name that represents a memory location that holds a value. Can appear on both sides of an assignment. On the lhs it is having its value changed, on the rhs it is effectively being an rvalue (just a value) e.g. i = i + 1;
+* rvalue: a value with no name. May only appear on the rhs of assignments
+* call by value uses an rvalue only. This is why you cannot update the actual object inside the function (it is using a copy of it). Call by reference passes the lvalue (name/label) that references the actual object into the function, thus it is using the real object itself.
+* function overloading: a function in the same scope that has the same name but different formal parameters is an overload. It must have different parameters otherwise it is a redefinition which is illegal. 
+* overload resolution: find all functions in the current scope that have the given name, filter to only those that have the same number of parameters and are of the same or convertible type, then pick the one that needs least conversions or is a best fit. return type is not considered in resolution and doesn't effect whether a function is an overload or not.
+* top level const (i.e. const on the actual thing itself, whether it is an object or pointer type) also has no effect on function declaration. This is because from the callers perspective, they are passing a copy into the function and so do not care whether the copy is modified or not. The decision of whether an rvalue parameter should be const or not only matters for the implementer of the function, but you can only implement one! e.g. you must choose between void foo(const int) and void foo(int), you cannot declare both.
+* all objects can have top level const. top level const means the thing itself is const. a const int means the int is const. a const pointer means the pointer itself is const (cannot be repointed), but it says nothing about the object it points to.
+* constexpr: a variable that can be calculated at compile time, or a function that may or may not be able to be calculated at compile time (thus decreasing runtime processing). better than using #define for constants.
 
-# week 2
+# week 2 
+
+## 2.1 - STL containers and iterators
+* use <fstream> for io to/from files.
+* std::ifstream my_input_file_stream {"file_name"} and std::fin for file input
+* std::ofstream my_output_file_stream {"file_name"} and std::fout for file output
+* remember to do my_io_file.close()
+* prefer explicit casting with static_cast<to_type>(thing_to_be_casted) over implicit casts e.g. int num = static_cast<int>(7.33) is better than int num = 7.33
+* iterate either by using a counting index (C style), iterator, or a foreach loop.
+* a function template is a prescription to the compiler that tells it how to generate functions of different types. The template itself is not a function.
+* STL (standard template library): a library of templated classes and functions. STL containers store data but don't know anything about algorithms. Iterators are an API that give access to container items in a specific way, irregardless of the underlying container. Each container implements its own iterator, then anyone is free to iterator over the iterms in the container using this iterator without having to know the internal of the container. Algorithms use iterators to implement their logic agnostic of container types. This is why STL algorithms use iterators!!! They are the glue between containers and algos.
+* an iterator is an abstract pointer. They abstract containers to appear to be a sequence of objects, regardless of the underlying container structure. This sequence is most commonly accessed as container.begin() to container.end(). begin abstractly "points" to the first object in the sequence, and end abstractly "points" to a special end object that is 1 spot passed the last container object. use * to dereference an iterator (get the object it points to) and use iter++ to increment it to point to the next object in the sequence.
+* note that container.end() isnt the last element, it is one passed the last element. It is a valid iterator value, but it is not valid to dereference it. 
+* you can use const iterators (the iterator itself isn't const because you need to ++ or -- it but the thing it points to is treated as const), and reverse iterators, but the default is a forwards iterator. 
+* note that with a reverse iterator you still use ++ as backwards is the forwards direction of this iterator.
+* there are input (read *iter and access iter-> only access), output (write only *p=x access), forward (iter++ only), bi-directional (iter++ and iter--), and random access iterators (iter += x, iter -= y, < > etc.)
+* stack and queue are container adapters and do not have iterators. It doesn't really make sense to iterate them anyway.
+* you can iterate file stream as well e.g. std::ifstream in {"data.in"}; std::istream_iterator<char> begin(in)
+* map vs unordered_map (logn for ordered but key requires < be defined, constant for unordered but requires a hashable key)
+
+## 2.2 - STL Algorithms
+* int std::accumulate(begin, end, x). sum from begin to end, starting with a value of x
+* if you want the product instead of the sum, just use std::accumulate(begin, end, x, std::multiplies<int>)
+* you can also only sum half way by doing end = c.begin() + (size()/2)
+* std::lower_bound(begin, end, x) binary searches for the first value >= x
+* std::upper_bound(begin, end, x) binary searches for the first calue stricly < x
+* std::transform(c1.begin, c1.end, std::back_inserter(c2), std::to_upper) calls to_upper on each of the elements of c1 from begin to end and inserts the result into c2. Note that you cannot pass c2.end instead of back_inserter
+* std::back_inserter(cont) gives you an ouput iterator (write access only), that adds to the end of it
+* lambda function: a function that can be defined inside other functions. Use std::function<int(int, bool)> for a function that returns int and takes an int and bool as arguments, or just use auto. e.g. auto lambda = (int a, int b) [] { return a > b; };
+* [] is a capture that can be used to capture local variables by value [=] or by reference [&]. Note that when useing a capture default of = or &, only the variables you actually use in the lambda are captured. You can also capture specific ones by reference or by value and they will ignore the default if given e.g. [factor, &total] captures factor by value and total by reference, [&, factor] would capture total by reference if it is used but captures factor by value.
+* std::for_each(begin, end, [] (int& value) {value++;}); for_each applies the passed function to each element that is iterated over. Lambda functions are especially useful here and for any other places you use higher order functions.
+* if you capture by value, then the copy in the lambda function will not update when the one in the local scope does. Be especially careful that you are passing a reference to a container into a lambda if you want that lamba to be able to actually update the container.
+* if you capture by reference, then the lambda function variable will receive updates when the original updates. Be careful that you the original hasn't gone out of scope! undefined behaviour!
 
 # week 3
 
