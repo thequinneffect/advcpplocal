@@ -297,85 +297,149 @@ for (int print_index; std::cin >> print_index; ) {
   * stack unwinding obviously calls destructors of all objects on the call stack, but any object that is not itself named (on the call stack) or owned by a named object will not be cleaned up i.e. raw pointer to heap memory -> the raw pointer itself will be cleaned up because it is on the stack frame, but the heap memory it pointed to is leaked.
   * if another exception is thrown during stack unwinding, the program terminates. However, it is okay for a destructor of a stack object to throw an exception as long as it handles it itself (doesn't leave the dtor). In general, dtors are noexcept anyway, because they need to release resources it doesn't make sense to allow them to fail (this is allowing leaks).
   * remember RAII : resource acquisition is initialisation -> encapsulate resources inside objects by acquiring the resource in the ctor and releasing it in the dtor. A good example of this is smart pointers.
-* **partial construction** : 
+* **partial construction** : the c++ standard states that "an object that is partially constructed will have destructors executed for all of its FULLY constructed members". The destructor will not be run for any objects who didn't fully construct. A destructor will not be run for an object that is partially constructed. The exception to the rule is an exception thrown in a ctor that delegates. See this post for more detail (https://stackoverflow.com/questions/32323406/what-happens-if-a-constructor-throws-an-exception/32323458) as well as the example below;
+~~~
+// this is an int that throws an exception if you try pass 69 to it
+class BadInt {
+  public:
+    MyInt(int i) : _i{i} {
+      if (i == 69) throw std::exception{};
+    }
+  private:
+    int _i;
+};
+
+// if we do Leaky(420, 69) then we will leak the int on the heap that contains 420
+// this is because BadInt(69) will throw, hence the dtor for Leaky will never run
+class Leaky {
+  public:
+    Leaky(int a, int b):
+      _a{new BadInt{a}}, _b{new BadInt{b}} {}
+    ~Leaky() { 
+      delete _a;
+      delete _b;
+    }
+  private:
+    BadInt* _a;
+    BadInt* _b;
+};
+
+// this still throws an exception, the difference now is that we don't leak
+// anything because _a is a fully constructed subobject and so its dtor will run
+class Plugged {
+public:
+    Plugged(int a, int b):
+      _a{std::make_unique<BadInt>(a)}, 
+      _b{std::make_unique<BadInt>(b)} {}
+
+  private:
+    std::unique_ptr<BadInt> _a;
+    std::unique_ptr<BadInt> _b;
+};
+};
+~~~
   
 ## Exception Safety Levels
-**1. no throw** (failure transparency - callers are unaware of whether the function throws or not) : this is achieved using the "noexcept" specifier. This means the method can throw exceptions but it must handle all of them inside itself i.e. no-throw means that if the method throws an exception and doesn't handle it itself then it will crash the program.
+**1. no throw** (failure transparency - callers are unaware of whether the function throws or not) : this is achieved using the "noexcept" specifier. This means the method can throw exceptions but it must handle all of them inside itself i.e. no-throw means that if the method throws an exception and doesn't handle it itself then it will crash the program. Usually used for things like closing files, freeing memory, ctors, dtors etc.
 **2. strong exception safety (commit or roll-back)** (i.e. either all changes are done successfully and the resultant state is commited, or we roll-back to the original state) : if the function throws then everything will be as it was before the call was made
-  * copy ctors and copy assignment
+  * used in copy ctors and copy assignment, copy and swap idiom (https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom)
   * achieved by first performing any operations that may throw but don't do anything irreversible, then performing irreversible operations that don't throw
 **3. basic exception safety** : When the function fails (throws exception), there can be side-effects but all invariants will still be true and we have a no-leak guarantee. We are left in a "valid but unspecified state" with the guarantee that no resources have been leaked. i.e. any stored data will contain valid values, even though these may be different from what was stored before
-  * move ctors that are not noexcept behave in this way
+  * move ctors that are not noexcept behave in this way e.g. when you move a unique_ptr it is left in a valid state (but the underlying pointer is set to null). In general, when you move any object, it must remain valid (can be destructed like any other object), it's just that its values are unspecified now (the implementation of its move may have nulled them out, set them to garbage, or just left them as they were). 
 **4. no safety**
 * There are no guarantees. Strap in boys.
 * **which one to use?** : generally the preference is from 1 to 4. No-throw and strong exception safety are the best but it's not a strict hierarchy i.e. no-throw isn't always better than strong etc etc. because it's not always appropriate to use each type e.g. it doesn't really make sense for an at() method to be no-throw/noexcept because if a user accesses an out of bounds index they should be notified (we throw an out of bounds exception and want our array to remain unchanged so we use strong exception safety here), instead of this error being silently handled within the at() function (which would be the "no throw" way of doing it)).
 
-# week 6 - templates (fri: skip to 3:50, skip 51:30 - 1:31:00 | wed: skip to
+# week 6 - templates
 
 ## Polymorphism in C++
-* Polymorphism is when you have the same single interface (API) being implemented with multiple different implementations (say version A vs version B etc.). Then, depending on whether you have an A or B, you will use the A or B version/implementation of the API.
+* Polymorphism is when you have the same single interface I (API) being implemented differently (say version A vs version B etc.). You use that same interface (I) regardless of whether you have an A or B, but what actual implementation gets called depends on whether you have an A or B.
 * C++ has two types of polymorphism, static and dynamic
 * **static polymorphism** : as the name suggests, this is compile-time polymorphism. This involves both function overloading (multiple function prototypes with the same name but different parameters) and templates (implementation of function logic without specifying actual types)
-* **dynamic polymorphism** : as the name suggests, this is run-time polymorphism (BUT it can also be compile-time depending on the variable type). This is all quite complicated and is explored later (week 8).
+* **dynamic polymorphism** : as the name suggests, this is run-time polymorphism (BUT it can also be compile-time depending on the variable type). See the week 8 section.
 
 ## Generic Programming
 * generic programming is programming where you write software components (methods, classes etc.) that are independant of types
   * it is the implementation of the logic i.e. the logic for a min algorithm doesn't change just because the data type being compared changes (the only thing that changes when the data type changes is how the comparison of the two variables of said data type are compared e.g. for an int you just see which one is lesser, for a string it is alphabetic, for a student class it could be comparing by zid etc.)
-  * because the logic is the same regardless of data type, as long as the data type being passed in has correctly implemented the operations that the generic algorithm needs, then it will work (like above for min the data type must have operator< defined)
+  * because the logic is the same regardless of data type, as long as the data type being passed in has correctly implemented the operations that the generic algorithm needs, then it will work (like above for min the data type must have operator< defined). This is the basic programming concept of contracts/promises coming up yet again i.e. the type has to implement the methods/operators that the generic algorithm needs.
 
 ## Why Templates?
-* without templates, we cannot program generically - that is, we cannot create a function which accepts and applies the same logic to two very different data types. Instead, we must create two versions of the same function i.e. function overloading (see slide 3.1 of lecture 6.2)
+* without templates, we cannot program generically - that is, we cannot create a function which accepts and applies the same logic to two very different data types. Instead, we must create two versions of the same function e.g.
+~~~
+int min(int a, int b) { return (a < b) ? a : b; }
+double min(double a, double b) { return (a < b) ? a : b; }
+~~~
+* as explained above, the logic (the body of the function) is exactly the same for the two different functions. The only difference is the types. Hence the compiler should be able to just insert the type for us, and as long as we uphold the contract of implementing the methods/operators that the function needs, everything should work. This is the idea behind function templates.
 
-## Templates
-**Function Templates**  
+## Function Templates
 * first of all, function templates are NOT CODE, they are instructions to generate code
 * secondly, the generation of a function (from a function template) for a particular type only happens when a call to the templated function is seen during compile time i.e. if you never parameterize a templated function then no actual functions will be generated (the compiler only generates what you parameterize)
-* you can think of templates as making the compiler generate function overloads for you
-  * this means that compiling takes longer (because the compiler has to compile each templated function n times - where n is the number of unique ways you parameterized that specific function template). This also mean that run-time is faster because we have the instructions specific to each type ready to go (no overhead at runtime, just call the matching function). 
+* you can think of templates as making the compiler generate function overloads for you (as described above). The compiler has to compile each templated function n times - where n is the number of unique ways you parameterized that specific function template). * This also mean that run-time is faster because we have the instructions specific to each type ready to go (i.e. the different overloads are generated at compile time, not run-time)
   * this is an example of how C++ shifts more work to compile time to have a faster run time (same motivation as constexpr)
-* you make a templated function by using the keyword template. Then you put however many **template type parameters** you need inside the **template paramter list**
+* you make a templated function by using the keyword template. Then you put however many **template type parameters** you need inside the **template parameter list**
 ~~~
 template <typename T> // this is the template parameter list. T itself is a template type parameter
 T min(T a, T b) {
  return a < b ? a : b;
 }
 ~~~
-* confusingly (and somewhat backwards), template type parameters (i.e. placeholders for types that themselves don't have a concrete type) are called **type parameters**. **Non-type parameters** are any actual concrete types (but they have no default value)
-  * it's easier to think of these as "typename parameters" and "non-typename parameters" becuase you use the keyword typename when there is no concrete type and the concrete type otherwise.
-  * another way to remember it is that you parameterize type parameters with types (like char, int, std::string etc.), whilst you parameterize non-type parameters with values (1, 3.0, 'a', "hello" etc.)
+* confusingly, template type parameters (i.e. T above) are called **type parameters**. **Non-type parameters** are any actual concrete types like int, string, char etc. (but they have no default value)
+  * it's easier to think of these as "typename parameters" and "non-typename parameters" becuase you use the keyword typename when there is no concrete type and the concrete type otherwise. Basically, it's answering the question of whether they are GENERIC TEMPLATE types or not. T is a generic template type, int is not, it's a concrete type.
+  * another way to remember it is that you pass concrete types (char, int, std::string etc.) to type parameters (T, G etc.), whilst you pass values (1, 3.0, 'a', "hello" etc.) to non-type parameters (int, double, char, string).
 ~~~
+// T is a type parameter (because you pass a type to it)
+// size and scaler are non-type parameters (because you pass values to them)
 template<typename T, int size, double scaler>
 foo(T lhs, T rhs) { ... } 
 ~~~
-* T is a type parameter, size and scaler are both non-type parameters. Remember you can figure this out because T uses typename and so must be a type parameter but size and scaler use int and double and so are non-type paramters (they don't use typename). The easiest way to figure it out is to imagine parameterizing it : foo<char, 5, 100>('a', 'b'), as you can see, the T's are parameterized with a type (char). making them type parameters, yet scaler and size are parameterized with values (making them non-type parameters)
 * non-type parameters are often used for passing things like container size e.g. "int array_size or int queue_size". The advantage of this is improved performance - the size of the container is determined at compile time requiring less to be done/processed at runtime. The disadvantages are 1. code explosion - instantiation created for a queue of every size and 2. you are unable to copy construct easily (for templated classes)  
+~~~
+// example of a non-type parameter being used to specify a container size
+// this template allows us to generate find_min for std::arrays of any type (that has < implemented) of any size
+template <typename T, int size>
+T find_min(const std::array<T, size> arr) {
+  T min = arr[0];
+  for (const auto& item : arr) {
+    if (item < min) min = item;
+  }
+  return min;
+}
 
-**Class Templates**  
+std::array<int, 3> x {3,1,2};
+std::array<double, 4> y {3.3, 1.1, 2.2, 4.4};
+print(find_min(x)); // 1
+print(find_min(y)); // 1.1
+~~~
 
-## Template Declarations and Definitions
+## Class Templates
+**Template Declarations and Definitions**
 * when you declare a template component (function or class), you must write the template parameter list (i.e. template <...>) above the class name or function name (except for when a function declaration is made inside a templated class, then it doesn't require it)
   * you can think of it like scopes. If you write the template paramter list above the class, then everything inside the class knows what the template parameters are
   * but that doesn't mean a method defined outside the class knows about them, so you must add the template paramter list above the method
   * tldr: the compiler won't know what T means if you don't have the template paramter list including T in it for each scope it is used in
 ~~~
-template <typename T>
+// mystack.h file
+
+template <typename T> // add typename T to the scope of the class definition
 class MyStack
 {
- void Push(T&);
- std::vector stack_;
+ void Push(T&); // don't need to write template <typename T> above this, the whole class scope knows about T from above
+ std::vector<T> _stack;
 }
 ~~~
-* also, when you define a templated class's member function otuside the class, not only do you have to add the template parameter list as described above, but you must parameterize the class name with the appropriate template parameter
+* also, **when you define a templated class's member function otuside the class, not only do you have to add the template parameter list as described above, but you must parameterize the class name with the appropriate template parameter**
+  * i'm not 100% sure why this is the case, but i'm guessing it's so you can have a non-templated class called MyStack if you want to? 
 ~~~
-// this is below ^ in the file
-template <typename T>
-void MyStack<T>::Push(T& element) { stack_.push_back(element); }
+// mystack.cpp file
+
+template <typename T> // need to add typename T to the scope of this definiton
+void MyStack<T>::Push(T& element) { _stack.push_back(element); } // need to parameterize stack with T
+
+template <typename T> // again, need to add typename T to each method definiton
+void MyStack<T>::Pop() { _stack.pop_back(); } // same as above
 ~~~
 
 # misc
 
 ## defaulting functions and the rule of five (or 6?)/special member functions
-* C++ has 6 special member functions: ctor, dtor, copy ctor, move ctor, copy assign, move assign
-* if you do not explicitly 
-
-## terminology
+* C++ has 6 special member functions: ctor, dtor, copy ctor, move ctor, copy assign, move assign (https://stackoverflow.com/questions/4172722/what-is-the-rule-of-three)
