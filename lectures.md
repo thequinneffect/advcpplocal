@@ -145,7 +145,7 @@ class T {
   * use members when the operation is called in the context of a particular instance
   * use friends when the operation is called without any particular instance (even if they don't require access to private details i.e. they can get all they need though public access) TODO: why make them friends if they don't have to be? isn't this bad encapsulation?
 
-# week 5 (wed: skip to 8:00, fri: start at start but skip  0:39 to 1:15:30)
+# week 5
 
 ## Ownership
 * **ownership** : you can think of ownership as a responsibility for correct cleanup of a resource. You own it, you perform the correct clean up procedure for the current situation.
@@ -154,46 +154,76 @@ class T {
 * **single/unique ownership** : the resource is owned by a single object. Once this owning object no longer exists then the resource is released.
 * **shared ownership** : the resource is shared between many objects and is only released once all objects no longer exist. This requires reference counts and is important to prevent a double/multiple free on the same pointer (which causes undefined behaviour). This is useful if you have a very expensive to copy resource.
 * it is easy to picture the difference of unique/single ownership and shared ownership as just 1 pointer pointing to something (unqiue/single) vs many pointers pointing to something (shared). 
-* **Pointer Ownership**
-* determining whether a pointer (of any kind) has ownership, and whether that ownership is shared, is easy as long as you understand what ownership is (to have ownership over a resource means to have the responsibility to clean it up when required) 
-  1. unique ptr : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared
-  2. shared ptr : has ownership because it is responsible for possibly having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so
-  3. weak ptr : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free and thus is non-owning (shared ownership therefore cannot exist)
-  4. raw c ptr/observer ptr : no ownership (reason stated many times), and hence non-sharing also
-  
 
 ## Object lifetimes
 * we attach the lifetime of an object to something else to create safe object lifetimes i.e. to ensure that an object will be destroyed once it is no longer needed
-* remember that everything is an object
-* **named objects (stack objects);**
-  * variables are tied to their scope
-  * a data member (of a class) is tied to the lifetime of that class instance (unless static)
-  * an element in a std::vector is tied to the lifetime of the vector
-* **un-named objects (heap objects);**
-  * heap objects should be tied to their owner
-    * an owning raw pointer (raw pointer that points to the heap data) is tied to its scope/owning class instance, but the difference is that when it is destroyed (goes out of scope, owning class instance is destructed), the data that it points to is not cleaned up. 
+* remember that everything is an object in c++, and there are two main types;
+* **1. named objects** 
+  * all named objects are cleaned up automatically when their name goes out of scope. Scope is dependent on where they are defined.
+  * **stack objects** : names/variables are tied to their scope - that is, they are automatically "freed" (popped off the stack) when they go out of scope
+  * **data members** : members of classes/structs etc. are tied to the lifetime of that class instance (unless static). When the class is cleaned up, so are they. They class itself may be on the stack or the heap.
+* **2. un-named objects (heap objects)**
+  * by un-named we mean they don't have a label for their location in memory, they just have a reference pointing to them. For example, int* num_ptr = new int(). num_ptr is a name, but it is the name for the pointer (8 byte word that holds the memory address of the heap int as its value), and not the name for the actual heap ints memory. Thus when num_ptr goes out of scope and is popped off the stack (automatically cleaned up), the underlying int (4 byte word) at the heap remains. Since we no longer have the pointer, we cannot even call delete on the heap int anymore because we don't know where it is (its address).
+  * For this reason, heap objects should be tied to their owner, that is, when the owner is cleaned up, so is the heap object itself. This is the motivation behind smart pointers, which are covered in the next section.
+    * an owning raw pointer (raw pointer that points to the heap data) is tied to its scope/owning class instance, but the difference is that when it is destroyed (goes out of scope or owning class instance is destructed), the data that it points to is not cleaned up. 
     * a c-style array is exactly the same as the above (array variable is just a pointer) except that you don't clean up not only 1 element, but n.
-* remember that using the heap for an object is essentially saying "this object needs its own space AND its OWN LIFETIME"
-* in c++ we tend to want to favour named/stack objects because that memory is managed for us (the combination of the stack frame protocol popping things, and c++ calling objects destructors when they are popped from the stack handles this)
+  * remember that using the heap for an object is essentially saying "this object needs its own space AND its OWN LIFETIME"
+* **named vs un-named objects, which one is better?** : we tend to want to **favour named/stack objects** because that memory is managed for us (the combination of the stack frame protocol popping things, and c++ calling objects destructors when they are popped from the stack allows for easy cleanup). If we wrap heap objects inside named/stack objects (e.g. int* data_ptr as a member of the class, call data_ptr = new int(arg) in the ctor, and delete data_ptr in the dtor), then we get automatic cleanup for unnamed heap objects too!! This is what smart pointers are, which are discussed in the following section.
 
 ## Smart Pointers (i.e. favouring named/stack objects over un-named heap objects)
 * the rationale is that you can choose between;
-  * raw pointers that point to "new" memory on the heap which is not freed unless "delete" is explicitly called. The heap memory is not freed when the raw pointer is popped from the stack frame.
+  * **1. raw pointers** that point to "new" memory on the heap which is not freed unless "delete" is explicitly called. The heap memory is not freed when the raw pointer is popped from the stack frame.
     * yes a raw pointer is technically a named/stack object too, but it isn't owning and so doesn't hold-up the clean-up contract that owning demands
-  * smart pointers (classes, and therefore named/stack objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
+  * **2. smart pointers** (classes, and therefore named/stack objects) that abstract away the new into their constructor and the delete into their destructor. Hence when the smart pointer class instance is popped from the stack frame, the destructor runs which has been implemented to free the allocated heap memory! Clearly this is better.
+~~~
+// .h/.tpp file
+template <typename T>
+class SmartPointer {
+  public:
+    SmartPointer(T* value)
+    ~SmartPointer() noexcept;
+    T* get_value();
+  private:
+    T* data;
+};
+
+// .cpp file
+SmartPointer::SmartPointer(T* value): data{value} {}
+T* SmartPointer::get_value() { return data; }
+SmartPointer::~SmartPointer() noexcept { delete data; }
+
+// usage file
+int main() {
+    auto spi = SmartPointer<int>{new int{5}};
+    int five = *(spi.get_value()); // it would be better to implement -> and * operator for the smart pointer class
+}
+~~~
+* **types of smart pointers**
+  * luckily, cpp implementes smart pointers for us, and so we don't need to code the above class ourselves. The different types of smart pointers available are;
+  1. unique pointer
+  2. shared pointer
+  3. weak pointer
+  4. observer pointer
 * **common combinations**  
   1. unique ptr + raw ptrs (observers)
-  2. shared ptr + weak ptr/raw ptrs (observers)  
-* use shared pointers when you need multiple pointers to a resource AND MORE IMPORTANTLY you don't know which one will live the longest (if you know which one will live the longest, you just make it a unique ptr and the rest observers/raw ptrs)
+  2. shared ptr + weak ptr/raw ptrs (observers)
+  * use shared pointers when you need multiple pointers to a resource AND MORE IMPORTANTLY you don't know which one will live the longest (if you know which one will live the longest, you just make it a unique ptr and the rest observers/raw ptrs)
 **avoid using new and delete** 
-* "unique_ptr<LongTypeName> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique<LongTypeName>(args)" mentions it once - this is one very small benefit for using make_* instead of new
-* compilers evaluate function arguments in different orders, some left to right, others right to left. Therefore if you call a function foo(new int, new double) then if one of these succeeds but the second one fails, the first one will be leaked (not free'd). You can fix this with smart pointers, foo(std::make_unique<int>(), std::make_unique<double>())
-* int* i = new int; std::unique_ptr<int> up1{i}, std::unique_ptr<int> up2{i}, ... , std::unique_ptr<int> upN{i}. As you can see, if you use new and have a raw pointer to it then you can have it owned by many unique pointers which doesn't make sense and will cause a crash on the second attempt to free (smart pointers aren't smart enought to get around this). By using auto up = std::make_unique<T>(val), you encapsulate the allocation within the make_unique function and so the only way to copy it would be to copy construct or copy assign it (and smart pointers ARE smart enough to defend against this!)
-* technically std::unique_ptr<T> up{new T} encapsulates the allocation as well (meaning the resource could not be re-used in any other way except for copy construction/copy assignment as well) but the problem is that this is bad for exception safety/stack unwinding (TODO: add once i know this)
+* "unique_ptr\<LongTypeName\> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique\<LongTypeName\>(args)" mentions it once - this is one very small benefit for using make_* instead of new
+* compilers evaluate function arguments in different orders, some left to right, others right to left. Therefore if you call a function foo(new int, new double) then if one of these succeeds but the second one fails, the first one will be leaked (not free'd). You can fix this with smart pointers, foo(std::make_unique\<int\>(), std::make_unique\<double\>())
+* int* i = new int; std::unique_ptr\<int\> up1{i}, std::unique_ptr\<int\> up2{i}, ... , std::unique_ptr\<int\> upN{i}. As you can see, if you use new and have a raw pointer to it then you can have it owned by many unique pointers which doesn't make sense and will cause a crash on the second attempt to free (smart pointers aren't smart enought to get around this). By using auto up = std::make_unique\<T\>(val), you encapsulate the allocation within the make_unique function and so the only way to copy it would be to copy construct or copy assign it (and smart pointers ARE smart enough to defend against this!)
+* technically std::unique_ptr\<T\> up{new T} encapsulates the allocation as well (meaning the resource could not be re-used in any other way except for copy construction/copy assignment as well) but the problem is that this is bad for exception safety/stack unwinding (TODO: add once i know this)
 **TODO: when you should/have to use new**
-**release vs reset (AKA: WHY THE FUCK DIDN'T THEY CHOOSE BETTER NAMES FOR THESE**
-* release : releases ownership and returns pointer to resource (reLease, L for leakable)
-* reset : deletes the currently owned resource
+**release vs reset**
+* release : releases ownership and returns pointer to resource (reLease, L for leakable).
+* reset : deletes the currently owned resource (why didn't they just call this method delete???)
+* **Pointer Ownership**
+* determining whether a pointer (of any kind) has ownership, and whether that ownership is shared, is easy as long as you understand what ownership is (to have ownership over a resource means to have the responsibility to clean it up when required) 
+  **1. unique ptr - owning, non-sharing** : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared
+  **2. shared ptr - owning, sharing** : has ownership because it is responsible for **possibly** having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so. It is always reponsible for updating a reference count.
+  **3. weak ptr - non-owning, non-sharing** : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free but it also has no power to keep the resource around if the reference count becomes 0 (i.e. all shared pointers release it). This is why you must check before accessing via a weak pointer, it may have been deleted from underneath you because you don't own it. There is also obviously no shared-ownership between weak pointers of the same resource, because there isn't even any ownership.
+  **4. raw c ptr/observer ptr - non-owning, non-sharing** : no ownership (reason stated many times), and hence non-sharing also. This is basically a weak pointer that doesn't have the ability to check whether the underlying data has been freed.
+* TODO: insert table of smart pointer ownership and sharedship here
 
 ## Exceptions
 * allows us to recover from critical but recoverable errors, instead of just terminating the program
