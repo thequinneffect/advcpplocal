@@ -426,11 +426,13 @@ class MyStack
  void Push(T&); // don't need to write template <typename T> above this, the whole class scope knows about T from above
  std::vector<T> _stack;
 }
+
+#include "mystack.tpp" // include the definitions after the declarations
 ~~~
 * also, **when you define a templated class's member function otuside the class, not only do you have to add the template parameter list as described above, but you must parameterize the class name with the appropriate template parameter**
   * i'm not 100% sure why this is the case, but i'm guessing it's so you can have a non-templated class called MyStack if you want to? 
 ~~~
-// mystack.cpp file
+// mystack.tpp file (which is included in the .h file)
 
 template <typename T> // need to add typename T to the scope of this definiton
 void MyStack<T>::Push(T& element) { _stack.push_back(element); } // need to parameterize stack with T
@@ -438,8 +440,108 @@ void MyStack<T>::Push(T& element) { _stack.push_back(element); } // need to para
 template <typename T> // again, need to add typename T to each method definiton
 void MyStack<T>::Pop() { _stack.pop_back(); } // same as above
 ~~~
+**template class example: implementing the rule of 5 (6 imo) for a vector based stack**
+~~~
+// 1. ctor
+template <typename T>
+Stack<T>::Stack() {}
 
-# misc
+// 2. copy ctor
+template <typename T>
+Stack<T>::Stack(const Stack<T> &s) : stack_{s.stack_} {}
+
+// 3. move ctor
+template <typename T>
+Stack<T>::Stack(Stack<T> &&s) : stack_(std::move(s.stack_)) {}
+
+// 4. copy assignment
+template <typename T>
+Stack<T>& Stack<T>::operator=(const Stack<T> &s) {
+  stack_ = s.stack_;
+} 
+
+// 5. move assignment
+template <typename T>
+Stack<T>& Stack<T>::operator=(Stack<T> &&s) {
+  stack_ = std::move(s.stack_);
+} 
+
+// 6. dtor
+template <typename T>
+Stack<T>:: ̃Stack() { }
+~~~
+* **member functions are only generated if called** : Just like how a specific concrete version of template\<typename T\> T min(T a, T b) { return (a < b) ? a : b; } will only be generated if you make a call to it with that specific concrete type, a templated classes member functions will only be instantiated if they are actually called. e.g. if you never call MyStack.pop() from above, then it will never be generated
+* **static and friend functions** : each concrete class that is generated from a class template has its own versions of any static variables, even if they weren't of a generic type. The same goes for friend functions.
+* **default types** : you can pass default arguments to type parameters 
+~~~
+template <typename T, typename C = std::vector<T>>
+class MyStack {
+...
+  C _stack; // this is a std::vector<T> unless something is explicitly passed for C
+}
+~~~
 
 ## defaulting functions and the rule of five (or 6?)/special member functions
 * C++ has 6 special member functions: ctor, dtor, copy ctor, move ctor, copy assign, move assign (https://stackoverflow.com/questions/4172722/what-is-the-rule-of-three)
+
+# Week 7 - Templates part 2
+
+## Template include and compilation
+* templates must be defined in the file that they are declared. This is because the definition needs to be known at compile time. If it were to happen at link time (when the .cpp files are linked), then a variation for every possible type would have to be generated (see here: https://stackoverflow.com/questions/6264249/how-does-the-compilation-linking-process-work). 
+* Basically, the compiler will generate different concrete types when you do MyStack\<int\>, MyStack\<double\> and MyStack\<std::string\>. These concrete types all have different concrete implementations (same logic, but the types are different, which does lead to different assembly/machine code). The compiler needs access to the implementation templates so it can generate each one of these different implementations.
+**Example: doesn't compile**
+* The following code will not compile. When compiling user.cpp, the compiler says "min is declared but not defined, which is okay, the definition (implementation) will be supplied from some other object file that the linker will have". However, min.cpp cannot be compiled because it doesn't know what concrete types to generate (remember that compilation happens in isolation for the different cpp files, they go from cpp files to object files, which are then linked to become an executable or library (dll)).
+~~~
+// file min.h
+template <typename T>
+T min(T a, T b);
+
+// file min.cpp
+template<typename T>
+T min(T a, T b) {
+    return (a < b) ? a : b;
+}
+
+// file user.cpp
+#include "min.h"
+int main() {
+    std::cout << min(1,2) << "\n";
+}
+~~~
+* if you were to add;
+~~~
+template 
+int min<int>(int,int);
+template
+double min<double>(double, double);
+~~~
+to the .cpp file then this would compile because now the compiler known which implementations to generate, then at link time the linker can patch the min calls in the user object file to reference the matching ones generated in the min object file. This is a bad idea however, because you have to manually type out all the different concrete instantiations you want (and forgetting one will cause it to not compile)
+* **The correct inclusion compilation model** : template declarations go in a .h file. template definitons go in a .tpp file. **The .tpp file is then included in the .h file after the declarations.**
+* This does slow down compilation as every single file that includes the .h will generate the concrete implementations, then later on the duplicate implementations have to be removed by the linker, but it does automate template type generation.
+
+# Week 7.2 - Custom Iterators
+
+## Normal iterators
+**what are they?**
+* abstract notion of a pointer. They abstract a container to be a sequence of objects starting at begin() and ending at end().
+* they are the glue between containers (supply an iterator, don't know anything about algorithms) and algorithms (use an iterator, don't know anything about the container)
+**invalidation**
+* as iterators are abstracted pointers, if you modify a container such that it needs to be reallocated, then the iterators and any other references become stale (because the container has moved in memory).
+* using an invalid iterator is undefined behaviour.
+* **push_back** : if the new element cannot fit (capacity already used up), then push_back causes a reallocation (moves in memory), and hence all iterators and references are invalidated. If it can fit, only the end() iterator is invalidated.
+* **erase** : this invalidates iterators/references at the point of erasure and onwards (we'll call this the "rest"). It returns a new iterator that can be used to traverse the possibly reallocated rest.
+* in general, modifying pre-existing container values does not invalidate anything, but adding or deleting values does.
+
+TODO: rest of custom iterators lecture
+
+# Week 8 - Advanced Templates
+
+TODO: rest of advanced template (assuming I wont need it for interview)
+
+# Week 8.2 - Advanced Types
+
+TODO: rest of advanced types (assuming I wont need it for interview)
+
+# Week 9 - Runtime Polymorphism
+
+
