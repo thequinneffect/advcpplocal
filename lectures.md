@@ -221,7 +221,19 @@ int main() {
   ~~~
   **3. weak pointer** : same as a weak pointer but it doesn't contribute to the reference count. This means the underlying heap object could be deleted out from under a weak pointer. Weak pointer has two methods that allow you to get around this. wp.expired() returns true if the reference count of the underlying heap object is 0 (and thus has been freed), and wp.lock performs "expired() ? shared_ptr\<T\>() : shared_ptr\<T\>(\*this)" i.e. it returns a shared ptr to the heap object if it hasn't been freed yet.
   ~~~
-  
+  auto sp1 = std::make_shared<int>(1);
+  auto sp2 = sp1;
+  std::weak_pointer<int> wp = sp1;
+  sp1.reset();
+  // wp and sp2 are still valid here
+  std::cout << wp.expired() << std::endl; // prints false
+  sp1 = wp.lock();
+  // sp1 is recovered
+  sp1.reset();
+  sp2.reset();
+  // underlying heap object destroyed
+  sp2 = wp.lock(); // return shared_ptr<int>{} i.e. sp to null
+  std::cout << wp.expired() << std::endl; // prints true
   ~~~
   **4. std::experimental::observer_ptr\<T\>** : basically a wrapper around a raw pointer. It has some benefits over a raw pointer, such as needing an explicit cast to cast it to a void ptr, you can't call delete on it, and it can't be incremented (sometimes you need to though). There are still cases where you should just use a raw pointer though e.g. if you need to increment it. This will remain in the experimental namespace forever according to Bjarne Stroustroup himself: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1408r0.pdf
 * **common combinations**  
@@ -246,6 +258,8 @@ int main() {
   **4. raw c ptr/observer ptr - non-owning, non-sharing** : no ownership (reason stated many times), and hence non-sharing also. This is basically a weak pointer that doesn't have the ability to check whether the underlying data has been freed.  
   
 ![Smart pointers - ownership and sharing](./images/wk5_shared_pointers_ownership_table.png)
+
+![Leak freedom by default](./images/wk5_leak_freedom_poster.png)
 
 ## Exceptions
 * allows us to recover from critical but recoverable errors, instead of just terminating the program
