@@ -227,16 +227,17 @@ int main() {
 * **common combinations**  
   1. unique ptr + raw ptrs (observers)
   2. shared ptr + weak ptr/raw ptrs (observers)
-  * use shared pointers when you need multiple pointers to a resource AND MORE IMPORTANTLY you don't know which one will live the longest (if you know which one will live the longest, you just make it a unique ptr and the rest observers/raw ptrs)
-**avoid using new and delete** 
-* "unique_ptr\<LongTypeName\> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique\<LongTypeName\>(args)" mentions it once - this is one very small benefit for using make_* instead of new
-* compilers evaluate function arguments in different orders, some left to right, others right to left. Therefore if you call a function foo(new int, new double) then if one of these succeeds but the second one fails, the first one will be leaked (not free'd). You can fix this with smart pointers, foo(std::make_unique\<int\>(), std::make_unique\<double\>())
-* int* i = new int; std::unique_ptr\<int\> up1{i}, std::unique_ptr\<int\> up2{i}, ... , std::unique_ptr\<int\> upN{i}. As you can see, if you use new and have a raw pointer to it then you can have it owned by many unique pointers which doesn't make sense and will cause a crash on the second attempt to free (smart pointers aren't smart enought to get around this). By using auto up = std::make_unique\<T\>(val), you encapsulate the allocation within the make_unique function and so the only way to copy it would be to copy construct or copy assign it (and smart pointers ARE smart enough to defend against this!)
-* technically std::unique_ptr\<T\> up{new T} encapsulates the allocation as well (meaning the resource could not be re-used in any other way except for copy construction/copy assignment as well) but the problem is that this is bad for exception safety/stack unwinding (TODO: add once i know this)
-**TODO: when you should/have to use new**
+  * Note: use shared pointers when you need multiple pointers to a resource AND MORE IMPORTANTLY you don't know which one will live the longest (if you know which one will live the longest, you just make it a unique ptr and the rest observers/raw ptrs). You will always always just use unique_ptrs
+**why we avoid using new and delete** 
+* **concise code** : "unique_ptr\<LongTypeName\> up{new LongTypeName(args)}" must mention LongTypeName twice, while "auto up = make_unique\<LongTypeName\>(args)" mentions it once - this is one very small benefit for using make_unique etc. instead of new
+* **argument leakage** : compilers evaluate function arguments in different orders, some left to right, others right to left. Therefore if you call a function **foo(new int, new double) then if one of these succeeds but the second one fails, the first one will be leaked** (not free'd). You can fix this with smart pointers, foo(std::make_unique\<int\>(), std::make_unique\<double\>())
+* **encapsulates the raw pointer** : int* i = new int; std::unique_ptr\<int\> up1{i}, std::unique_ptr\<int\> up2{i}, ... , std::unique_ptr\<int\> upN{i}. As you can see, **if you use new and have a raw pointer then you can have it owned by many unique pointers** which doesn't make sense and will cause a crash on the second attempt to free (smart pointers aren't smart enought to get around this). By using auto up = std::make_unique\<T\>(val), you encapsulate the allocation within the make_unique function and so the only way to copy it would be to copy construct or copy assign it (and smart pointers ARE smart enough to defend against this because they have no copy ctor or assignment). It also prevents someone from calling delete on the raw pointer.
+* **exception/stack unwinding safety** : technically std::unique_ptr\<X\>(new X) encapsulates the allocation as well (meaning the resource could not be re-used in any other way except for copy construction/copy assignment as well) but new isn't as exception safe as make_unique is.
+**When you should/have to use new/raw pointers**
+* Don't make unique pointers to foreign raw_pointers. You don't know if someone is going to call delete on that pointer or not!
 **release vs reset**
 * release -> ptr_to_res : releases ownership and returns pointer to resource (reLease, L for leakable).
-* reset(new resource) -> void : deletes the currently owned resource (and sets it to the newly passed in resource)
+* reset(ptr_to_new_resource) -> void : deletes the currently owned resource (and sets it to the newly passed in resource)
 * **Pointer Ownership**  
 * determining whether a pointer (of any kind) has ownership, and whether that ownership is shared, is easy as long as you understand what ownership is (to have ownership over a resource means to have the responsibility to clean it up when required)  
   **1. unique ptr - owning, non-sharing** : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared  
