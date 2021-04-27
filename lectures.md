@@ -136,7 +136,7 @@ class T {
   * but why not use a l-value reference (T& bar) to add the new name bar to the piece of memory? hmm
 * If you are passing an 
 * if you want to pass an argument to a r-value reference parameter (T&&) then that argument must either already be an r-value or you must explicitly cast it to an r-value with std::move().
-* std::move : this can be thought of as removing the names from an l-value piece of memory to make it into an r-value. 
+* std::move : this can be thought of as removing the names from an l-value piece of memory to make it into an r-value. See this page (https://stackoverflow.com/questions/3413470/what-is-stdmove-and-when-should-it-be-used#:~:text=It's%20a%20new%20C%2B%2B%20way,not%20copying%20all%20the%20data.) for a high level overview of what is happening, and see this page (https://stackoverflow.com/questions/7510182/how-does-stdmove-transfer-values-into-rvalues) and this page (https://stackoverflow.com/questions/12193143/whats-the-magic-of-stdmove) for the low level details.
 
 # week 4
 
@@ -200,10 +200,30 @@ int main() {
 ~~~
 * **types of smart pointers**
   * luckily, cpp implementes smart pointers for us, and so we don't need to code the above class ourselves. The different types of smart pointers available are;
-  1. unique pointer
-  2. shared pointer
-  3. weak pointer
-  4. observer pointer
+  **1. std::unique_ptr\<T\>** : owns the underlying heap object. When the unique pointer object is destructed, so is the underlying heap object. It has no copy ctor or copy assignment. Prefer using auto and make_unique\<type\>(value) from the memory header when using unique pointers. This is safer than using new or passing in a pre-existing raw pointer (someone might "delete raw_ptr").
+  ~~~
+  std::unique_ptr<int> up1 {new int};
+  std::unique_ptr<int> up2 {up1.release()}; // cannot copy construct or copy assign, but can transfer ownership from up to up
+  auto up3 = std::move(up2); // transfer ownership by moving up2 into up3. Note that up2 is valid, but now points to null
+  std::cout << *up3 << "\n"; // you can dereference smart pointers as if they are raw pointers
+  // if the up points to a multi-field value then you can access it
+  auto up4 = std::make_unique<Node>(10, 5, 15); // where Node has parent, left, right fields
+  std::cout << up4->parent << up4->left << up4->right << std::endl;
+  std::cout << up4.get() << std::endl; // up.get() returns the value of the underlying raw pointer i.e. the heap address
+  ~~~
+  **2. std::shared_pointer** : this is a smart pointer that uses reference counting. If n smart pointers all point to the same underlying heap object, then all n have to destruct before n will be freed i.e. when a shared_ptr destructs, the reference count is decremented, if the reference count is 0, then the underlying object is destroyed as well.
+  ~~~
+  Node* node = new Node(2,1,3);
+  auto sp1 = make_shared<Node>(node); // sp1.use_count() returns 1
+  auto sp2 = make_shared<Node>(node); // sp[1/2].use_count() returns 2
+  sp2.reset(); // sp1.use_count is 1
+  sp1.reset(); // use count is 0, now the underlying heap object is freed
+  ~~~
+  **3. weak pointer** : same as a weak pointer but it doesn't contribute to the reference count. This means the underlying heap object could be deleted out from under a weak pointer. Weak pointer has two methods that allow you to get around this. wp.expired() returns true if the reference count of the underlying heap object is 0 (and thus has been freed), and wp.lock performs "expired() ? shared_ptr\<T\>() : shared_ptr\<T\>(\*this)" i.e. it returns a shared ptr to the heap object if it hasn't been freed yet.
+  ~~~
+  
+  ~~~
+  **4. std::experimental::observer_ptr\<T\>** : basically a wrapper around a raw pointer. It has some benefits over a raw pointer, such as needing an explicit cast to cast it to a void ptr, you can't call delete on it, and it can't be incremented (sometimes you need to though). There are still cases where you should just use a raw pointer though e.g. if you need to increment it. This will remain in the experimental namespace forever according to Bjarne Stroustroup himself: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1408r0.pdf
 * **common combinations**  
   1. unique ptr + raw ptrs (observers)
   2. shared ptr + weak ptr/raw ptrs (observers)
@@ -215,14 +235,15 @@ int main() {
 * technically std::unique_ptr\<T\> up{new T} encapsulates the allocation as well (meaning the resource could not be re-used in any other way except for copy construction/copy assignment as well) but the problem is that this is bad for exception safety/stack unwinding (TODO: add once i know this)
 **TODO: when you should/have to use new**
 **release vs reset**
-* release : releases ownership and returns pointer to resource (reLease, L for leakable).
-* reset : deletes the currently owned resource (why didn't they just call this method delete???)
-* **Pointer Ownership**
-* determining whether a pointer (of any kind) has ownership, and whether that ownership is shared, is easy as long as you understand what ownership is (to have ownership over a resource means to have the responsibility to clean it up when required) 
-  **1. unique ptr - owning, non-sharing** : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared
-  **2. shared ptr - owning, sharing** : has ownership because it is responsible for **possibly** having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so. It is always reponsible for updating a reference count.
-  **3. weak ptr - non-owning, non-sharing** : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free but it also has no power to keep the resource around if the reference count becomes 0 (i.e. all shared pointers release it). This is why you must check before accessing via a weak pointer, it may have been deleted from underneath you because you don't own it. There is also obviously no shared-ownership between weak pointers of the same resource, because there isn't even any ownership.
-  **4. raw c ptr/observer ptr - non-owning, non-sharing** : no ownership (reason stated many times), and hence non-sharing also. This is basically a weak pointer that doesn't have the ability to check whether the underlying data has been freed.
+* release -> ptr_to_res : releases ownership and returns pointer to resource (reLease, L for leakable).
+* reset(new resource) -> void : deletes the currently owned resource (and sets it to the newly passed in resource)
+* **Pointer Ownership**  
+* determining whether a pointer (of any kind) has ownership, and whether that ownership is shared, is easy as long as you understand what ownership is (to have ownership over a resource means to have the responsibility to clean it up when required)  
+  **1. unique ptr - owning, non-sharing** : has ownership because it is responsible for freeing the un-named data. As the name suggests, this ownership is not shared  
+  **2. shared ptr - owning, sharing** : has ownership because it is responsible for **possibly** having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so. It is always reponsible for updating a reference count.  
+  **3. weak ptr - non-owning, non-sharing** : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free but it also has no power to keep the resource around if the reference count becomes 0 (i.e. all shared pointers release it). This is why you must check before accessing via a weak pointer, it may have been deleted from underneath you because you don't own it. There is also obviously no shared-ownership between weak pointers of the same resource, because there isn't even any ownership.  
+  **4. raw c ptr/observer ptr - non-owning, non-sharing** : no ownership (reason stated many times), and hence non-sharing also. This is basically a weak pointer that doesn't have the ability to check whether the underlying data has been freed.  
+  
 ![Smart pointers - ownership and sharing](./images/wk5_shared_pointers_ownership_table.png)
 
 ## Exceptions
