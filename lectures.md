@@ -223,7 +223,7 @@ int main() {
   **2. shared ptr - owning, sharing** : has ownership because it is responsible for **possibly** having to free the un-named data. As the name suggests, this ownership can be shared and uses reference counts to do so. It is always reponsible for updating a reference count.
   **3. weak ptr - non-owning, non-sharing** : a shared pointer that does not increment the reference count. Because it doesn't increment the reference count, it has no responsibility to free but it also has no power to keep the resource around if the reference count becomes 0 (i.e. all shared pointers release it). This is why you must check before accessing via a weak pointer, it may have been deleted from underneath you because you don't own it. There is also obviously no shared-ownership between weak pointers of the same resource, because there isn't even any ownership.
   **4. raw c ptr/observer ptr - non-owning, non-sharing** : no ownership (reason stated many times), and hence non-sharing also. This is basically a weak pointer that doesn't have the ability to check whether the underlying data has been freed.
-* TODO: insert table of smart pointer ownership and sharedship here
+![Smart pointers - ownership and sharing](./images/wk5_shared_pointers_ownership_table.png)
 
 ## Exceptions
 * allows us to recover from critical but recoverable errors, instead of just terminating the program
