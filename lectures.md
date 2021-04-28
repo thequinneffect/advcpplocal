@@ -544,4 +544,10 @@ TODO: rest of advanced types (assuming I wont need it for interview)
 
 # Week 9 - Runtime Polymorphism
 
+## Basics of Polymorphism
+* **abstraction** : abstraction is the separation of interface (API) and implementation. If all you have is a concrete class, then you have no abstraction. If you have an interface, and a concrete class that implements this interface, then you have abstracted the specific implementation details away from the interface. For example, you use the interface of begin(), end(), and it++ when working with iterators regardless of the implementation (one ++ might increment an array index, another might follow a pointer in a linked list).
+* **encapsulation** : encapsulation is hiding the implementation. It is achieved via abstraction. If something is successfully encapsulated, you don't need to know how it is implemented to use it (you just need to understand and use the interface). Analogy: when you are driving a car you don't need to know how turning the steering wheel ends up turning the wheels, you just need to be aware that this is the function of the steering wheel. 
+* **inheritance** : the ability to create new classes based on already existing ones. 
+* **polymorphism** : the provision of many concrete implementations of an interface. It allows you to use subclass objects as if they are a base class (i.e. use the parent API but the child implementation) and seemlessly switch between them. Note that this cannot go the other way around (in all cases - see "up casting" section) because it's not guaranteed that the parent implements everthing in the child API.
+* **dynamic binding** : run-time resolution of the appropriate function implementation to call based on the type of the object it was invoked from. Necessary when you have polymorphism. In c++, dynamic binding is suported via virtual functions.
 
