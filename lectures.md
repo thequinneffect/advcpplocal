@@ -545,9 +545,26 @@ TODO: rest of advanced types (assuming I wont need it for interview)
 # Week 9 - Runtime Polymorphism
 
 ## Basics of Polymorphism
-* **abstraction** : abstraction is the separation of interface (API) and implementation. If all you have is a concrete class, then you have no abstraction. If you have an interface, and a concrete class that implements this interface, then you have abstracted the specific implementation details away from the interface. For example, you use the interface of begin(), end(), and it++ when working with iterators regardless of the implementation (one ++ might increment an array index, another might follow a pointer in a linked list).
-* **encapsulation** : encapsulation is hiding the implementation. It is achieved via abstraction. If something is successfully encapsulated, you don't need to know how it is implemented to use it (you just need to understand and use the interface). Analogy: when you are driving a car you don't need to know how turning the steering wheel ends up turning the wheels, you just need to be aware that this is the function of the steering wheel. 
-* **inheritance** : the ability to create new classes based on already existing ones. 
+* **abstraction** : abstraction is the separation of interface (API) and implementation. If all you have is a concrete class, then you have no abstraction. If you have an interface, and a concrete class that implements this interface, then you have abstracted the specific implementation details away from the interface. For example, you use the interface of begin(), end(), and it++ when working with iterators regardless of the implementation (one version of it++ might increment an array index, another might follow a pointer in a linked list).
+  * another way to view it is that abstraction is generalisation. The process or algorithm that has to occur is thought of at a high-level, rather than at any specific implementation level.   
+* **encapsulation** : encapsulation is hiding the implementation. It is achieved via abstraction. If something is successfully encapsulated, you don't need to know how it is implemented to use it (you just need to understand and use the interface). Analogy: when you are driving a car you don't need to know how turning the steering wheel ends up turning the wheels, you just need to be aware that this is the function of the steering wheel - you don't need to know how the internals work to use it.
+* **inheritance** : From the programmers viewpoint, inheritance is the ability to create new classes based on already existing ones. From a conceptual viewpoint, inheritance is a contract in which the child class agrees to implement the API of the parent class, specifically in a way in which the child can be used as a parent without any expectations being broken (see LSP).
 * **polymorphism** : the provision of many concrete implementations of an interface. It allows you to use subclass objects as if they are a base class (i.e. use the parent API but the child implementation) and seemlessly switch between them. Note that this cannot go the other way around (in all cases - see "up casting" section) because it's not guaranteed that the parent implements everthing in the child API.
-* **dynamic binding** : run-time resolution of the appropriate function implementation to call based on the type of the object it was invoked from. Necessary when you have polymorphism. In c++, dynamic binding is suported via virtual functions.
+* **dynamic binding** : run-time resolution of the appropriate function implementation to call based on the type of the object it was invoked from. Necessary when you have polymorphism. In c++, dynamic binding is suported via virtual functions and v-tables (see below).
+
+## Class relationships in OOP
+* From an OOP standpoint, classes represent concepts.
+* Relationships between classes come in two forms;
+  * 1. Inheritance: A is a B, and does everything B does. A can sit in for B without any bad side-effects.
+    * For example, a Dog is an Animal. If an animal can do x, then a dog can also do x because it is an animal. A dog should be able to be used in place of Animal with no ill side effects. If an Animal can do something (y) a Dog cannot do, then y may not belong on Animal.
+  * 2. Composition: A has a B, but isn't a B itself. The B can be injected into A at construction time (preffered) or later on (to change the type of B it has).
+    * For example, an Inbox screen might use a WebService class to fetch emails, because the inbox itself isn't a webservice and shouldn't implement that functionality itself. You **could** hard-code the inbox class to have an instance of the EmailFetchingWebService, but it is more flexible to pass it in via the constructor or setter. The constructor is better because it guarantees the object is valid upon construction. You can use both if you want to be able to change the behaviour of the webservice at runtime. This also helps with testing because you can pass in a FakeEmailFetcher that just returns a static JSON string instead of actually making a web request. Now you can test your inbox before you webservice is implemented and without worry that any errors are coming from the webservice part of the class.
+
+# Inheritance in C++
+* Every child class ctor must call a parent class ctor. If none is explicitly called, then the default parent ctor will be implicity called to uphold this rule.
+* A child class cannot initialise any fields in the parent class manually, this is why it must call a parent ctor
+* Because of these two rules, all abstract classes must have constructors (because even though they themselves cannot be constructed, the children implementations need to be able to call their ctors to initialise them)
+
+
+
 
